@@ -1,17 +1,14 @@
 name: deploy
-env:
-  IMAGE_NAME: app250416
-
 on:
   push:
     paths:
-      - ".github/workflows/**"
-      - "src/**"
-      - "build.gradle.kts"
-      - "Dockerfile"
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'Dockerfile'
     branches:
       - main
-
 jobs:
   makeTagAndRelease:
     runs-on: ubuntu-latest
@@ -35,17 +32,17 @@ jobs:
           body: ${{ steps.create_tag.outputs.changelog }}
           draft: false
           prerelease: false
-
   buildImageAndPush:
     name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE_NAME: app20250416
     steps:
       - uses: actions/checkout@v4
-      - name: application-secret 추가
+      - name: application-secret.yml 생성
         env:
-          ACTIONS_STEP_DEBUG: true
-          APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET }}
+          APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET_YML }}
         run: echo "$APPLICATION_SECRET" > src/main/resources/application-secret.yml
       - name: Docker Buildx 설치
         uses: docker/setup-buildx-action@v2
@@ -59,15 +56,15 @@ jobs:
         run: |
           echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
         env:
-          OWNER: "${{ github.repository_owner }}"
+          OWNER: '${{ github.repository_owner }}'
       - name: 빌드 앤 푸시
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }},
-            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }},
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.DOCKER_IMAGE_NAME }}:latest
   deploy:
     runs-on: ubuntu-latest
     needs: [ buildImageAndPush ]
@@ -79,12 +76,12 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          instance-ids: "i-097b759b696bcfd26"
+          instance-ids: "i-015d44766db7d2a9f"
           working-directory: /
           comment: Deploy
           command: |
-            sudo docker pull ghcr.io/${{ env.OWNER_LC }}/app250416:latest
-            sudo docker stop app1 2>/dev/null
-            sudo docker rm app1 2>/dev/null
-            sudo docker run -d --name app1 -p 8080:8080 ghcr.io/${{ env.OWNER_LC }}/app250416:latest
-            sudo docker rmi $(docker images -f "dangling=true" -q)
+            docker pull ghcr.io/${{ env.OWNER_LC }}/app20250416:latest
+            docker stop app1 2>/dev/null
+            docker rm app1 2>/dev/null
+            docker run -d --name app1 -p 8080:8080 ghcr.io/${{ env.OWNER_LC }}/app20250416:latest
+            docker rmi $(docker images -f "dangling=true" -q)
