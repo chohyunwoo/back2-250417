@@ -83,8 +83,8 @@ jobs:
           working-directory: /
           comment: Deploy
           command: |
-            sudo docker pull ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:latest
+            sudo docker pull ghcr.io/${{ env.OWNER_LC }}/app250416:latest
             sudo docker stop app1 2>/dev/null
             sudo docker rm app1 2>/dev/null
-            sudo docker run -d --name app1 -p 8080:8080 ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:latest
+            sudo docker run -d --name app1 -p 8080:8080 ghcr.io/${{ env.OWNER_LC }}/app250416:latest
             sudo docker rmi $(docker images -f "dangling=true" -q)
